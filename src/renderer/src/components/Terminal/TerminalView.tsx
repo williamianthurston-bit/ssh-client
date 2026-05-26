@@ -4,89 +4,66 @@ import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
 import { Session, useAppStore } from '../../store/appStore'
+import { getTheme } from '../../lib/terminalThemes'
+import ThemesPanel from './ThemesPanel'
 
-interface Props {
-  session: Session
-}
+interface Props { session: Session }
 
 export default function TerminalView({ session }: Props): React.ReactElement {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const termRef = useRef<Terminal | null>(null)
-  const fitAddonRef = useRef<FitAddon | null>(null)
-  const cleanupRef = useRef<(() => void) | null>(null)
-  const { setSessionStatus, toggleSFTP } = useAppStore()
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const termRef       = useRef<Terminal | null>(null)
+  const fitRef        = useRef<FitAddon | null>(null)
+  const cleanupRef    = useRef<(() => void) | null>(null)
 
+  const {
+    setSessionStatus, toggleSFTP,
+    setSessionTheme, settings,
+    themesPanelOpen, setThemesPanelOpen,
+  } = useAppStore()
+
+  /* ── Mount terminal ── */
   const initTerminal = useCallback(() => {
     if (!containerRef.current || termRef.current) return
 
     const term = new Terminal({
-      theme: {
-        background: '#0D0D1A',
-        foreground: '#E4E6F0',
-        cursor: '#6E3FC5',
-        cursorAccent: '#1C1C2E',
-        selectionBackground: 'rgba(110, 63, 197, 0.35)',
-        black: '#13131F',
-        red: '#E05D5D',
-        green: '#4CAF82',
-        yellow: '#F5A623',
-        blue: '#5B8AF0',
-        magenta: '#C678DD',
-        cyan: '#56B6C2',
-        white: '#E4E6F0',
-        brightBlack: '#5C6370',
-        brightRed: '#E06C75',
-        brightGreen: '#98C379',
-        brightYellow: '#E5C07B',
-        brightBlue: '#61AFEF',
-        brightMagenta: '#C678DD',
-        brightCyan: '#56B6C2',
-        brightWhite: '#FFFFFF'
-      },
-      fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',
-      fontSize: 14,
-      lineHeight: 1.4,
-      cursorStyle: 'bar',
+      theme: getTheme(session.theme || settings.terminalTheme),
+      fontFamily: settings.fontFamily,
+      fontSize: settings.fontSize,
+      lineHeight: 1.65,
+      cursorStyle: settings.cursorStyle,
       cursorBlink: true,
       scrollback: 10000,
       allowTransparency: true,
-      convertEol: false
+      convertEol: false,
+      macOptionIsMeta: true,
     })
 
-    const fitAddon = new FitAddon()
-    const webLinksAddon = new WebLinksAddon()
-
-    term.loadAddon(fitAddon)
-    term.loadAddon(webLinksAddon)
-
+    const fit = new FitAddon()
+    term.loadAddon(fit)
+    term.loadAddon(new WebLinksAddon())
     term.open(containerRef.current)
-    fitAddon.fit()
+    fit.fit()
 
     termRef.current = term
-    fitAddonRef.current = fitAddon
+    fitRef.current  = fit
 
-    // Send keystroke data to SSH
-    const disposeData = term.onData((data) => {
+    const disposeData = term.onData(data => {
       if (session.status === 'connected') {
-        window.api.ssh.write(session.tabId, data)
+        window.api?.ssh?.write(session.tabId, data)
       }
     })
 
-    // Receive SSH data → write to terminal
-    const unsubData = window.api.ssh.onData(session.tabId, (chunk: string) => {
+    const unsubData = window.api?.ssh?.onData(session.tabId, (chunk: string) => {
       term.write(chunk)
-    })
+    }) ?? (() => {})
 
-    // Handle connection closed
-    const unsubClosed = window.api.ssh.onClosed(session.tabId, (msg: string) => {
-      term.writeln('')
-      term.writeln(`\x1b[33m[${msg}]\x1b[0m`)
+    const unsubClosed = window.api?.ssh?.onClosed(session.tabId, (msg: string) => {
+      term.writeln(`\r\n\x1b[33m[${msg}]\x1b[0m`)
       setSessionStatus(session.tabId, 'disconnected')
-    })
+    }) ?? (() => {})
 
-    // Write connecting message
     if (session.status === 'connecting') {
-      term.writeln(`\x1b[36mConnecting to ${session.host}…\x1b[0m`)
+      term.writeln(`\x1b[2mConnecting to ${session.host}…\x1b[0m`)
     }
 
     cleanupRef.current = () => {
@@ -98,10 +75,8 @@ export default function TerminalView({ session }: Props): React.ReactElement {
     }
   }, [session.tabId])
 
-  // Mount terminal
   useEffect(() => {
-    // Small delay to ensure DOM is ready
-    const t = setTimeout(initTerminal, 50)
+    const t = setTimeout(initTerminal, 30)
     return () => {
       clearTimeout(t)
       cleanupRef.current?.()
@@ -109,104 +84,231 @@ export default function TerminalView({ session }: Props): React.ReactElement {
     }
   }, [initTerminal])
 
-  // Update status message
+  /* ── Error messages ── */
   useEffect(() => {
-    if (!termRef.current) return
-    if (session.status === 'connected') {
-      // Clear connecting message when connected
-    } else if (session.status === 'error') {
-      termRef.current.writeln(`\x1b[31m[Error: ${session.errorMsg}]\x1b[0m`)
-    }
+    if (!termRef.current || session.status !== 'error') return
+    termRef.current.writeln(`\r\n\x1b[31m[Error: ${session.errorMsg}]\x1b[0m`)
   }, [session.status])
 
-  // Resize observer
+  /* ── Resize observer ── */
   useEffect(() => {
     if (!containerRef.current) return
-    const observer = new ResizeObserver(() => {
-      if (fitAddonRef.current && termRef.current) {
-        try {
-          fitAddonRef.current.fit()
-          const { rows, cols } = termRef.current
-          window.api.ssh.resize(session.tabId, rows, cols)
-        } catch (_) { /* ignore during unmount */ }
-      }
+    const obs = new ResizeObserver(() => {
+      try {
+        fitRef.current?.fit()
+        const { rows, cols } = termRef.current ?? {}
+        if (rows && cols) window.api?.ssh?.resize(session.tabId, rows, cols)
+      } catch {}
     })
-    observer.observe(containerRef.current)
-    return () => observer.disconnect()
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
   }, [session.tabId])
 
-  const isBusy = session.status === 'connecting'
-  const isError = session.status === 'error'
+  /* ── Live theme switch ── */
+  useEffect(() => {
+    if (termRef.current?.options) {
+      termRef.current.options.theme = getTheme(session.theme)
+    }
+  }, [session.theme])
 
   return (
-    <div className="relative h-full" style={{ background: 'var(--bg-terminal)' }}>
-      {/* Toolbar */}
-      <div
-        className="flex items-center justify-between px-4 py-1.5 border-b"
-        style={{ background: 'rgba(13,13,26,0.8)', borderColor: 'var(--border)' }}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{
-              background: session.status === 'connected' ? 'var(--success)'
-                : session.status === 'connecting' ? 'var(--warning)'
-                : session.status === 'error' ? 'var(--error)'
-                : 'var(--text-muted)',
-              boxShadow: session.status === 'connected' ? '0 0 6px var(--success)' : 'none'
-            }}
-          />
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {session.label}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          {/* SFTP toggle */}
-          <button
-            title="Toggle SFTP"
-            onClick={() => toggleSFTP(session.tabId)}
-            className="flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all"
-            style={{ color: 'var(--text-muted)', background: 'transparent' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-light)'; e.currentTarget.style.color = 'var(--accent)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: 'var(--bg-terminal)' }}>
+      {/* xterm area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ flex: 1, position: 'relative' }} />
+
+        {/* Connecting overlay */}
+        {session.status === 'connecting' && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(11,15,28,0.85)', backdropFilter: 'blur(4px)',
+          }}>
+            <ConnectingCard session={session} />
+          </div>
+        )}
+
+        {/* Error overlay */}
+        {session.status === 'error' && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: '12px',
+          }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: 'rgba(239,68,68,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: '#ef4444' }}>Connection failed</p>
+              <p style={{ fontSize: '12px', marginTop: '4px', color: 'var(--text-secondary)', maxWidth: '280px' }}>
+                {session.errorMsg}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Themes panel (slides in) */}
+      {themesPanelOpen && (
+        <ThemesPanel tabId={session.tabId} currentTheme={session.theme} />
+      )}
+
+      {/* Right icon bar */}
+      <div style={{
+        width: '44px', flexShrink: 0,
+        background: 'var(--bg-sidebar)',
+        borderLeft: '1px solid var(--border-light)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', padding: '10px 0', gap: '6px',
+      }}>
+        <RightBtn title="Navigation" active onClick={() => {}}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M8 5v3l2 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </RightBtn>
+        <RightBtn title="Code mode" onClick={() => {}}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M5 5l-3 3 3 3M11 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </RightBtn>
+        <RightBtn title="Help" onClick={() => {}}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M7 6.5C7 5.7 7.7 5 8.5 5S10 5.7 10 6.5c0 .6-.4 1.1-.9 1.4L8 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            <circle cx="8" cy="11" r=".8" fill="currentColor"/>
+          </svg>
+        </RightBtn>
+        <RightBtn
+          title="Themes"
+          active={themesPanelOpen}
+          onClick={() => setThemesPanelOpen(!themesPanelOpen)}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M8 5.5a2.5 2.5 0 11-1.77 4.27" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+        </RightBtn>
+        <RightBtn title="SFTP" onClick={() => toggleSFTP(session.tabId)}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+        </RightBtn>
+      </div>
+    </div>
+  )
+}
+
+/* ── Connecting card ── */
+function ConnectingCard({ session }: { session: Session }) {
+  return (
+    <div style={{
+      background: 'var(--bg-panel)',
+      border: '1px solid var(--border)',
+      borderRadius: '12px',
+      padding: '20px 24px',
+      display: 'flex', flexDirection: 'column', gap: '14px',
+      width: '340px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '38px', height: '38px', borderRadius: '9px',
+            background: '#e95420',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <circle cx="12" cy="12" r="4" fill="white"/>
+              <circle cx="12" cy="2" r="2.5" fill="white"/>
+              <circle cx="20.8" cy="17" r="2.5" fill="white"/>
+              <circle cx="3.2" cy="17" r="2.5" fill="white"/>
             </svg>
-            SFTP
-          </button>
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {session.label}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: '"JetBrains Mono", monospace' }}>
+              SSH {session.host}:22
+            </div>
+          </div>
+        </div>
+        <button style={{
+          padding: '6px 12px', borderRadius: '7px', fontSize: '12px', fontWeight: 500,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+        }}>
+          Show logs
+        </button>
+      </div>
+
+      {/* Progress */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{
+          width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+          border: '2.5px solid var(--border)', borderTopColor: 'var(--accent)',
+          animation: 'spin 0.7s linear infinite',
+        }} />
+        <div style={{
+          flex: 1, height: '3px',
+          background: 'var(--border)', borderRadius: '99px', overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', width: '65%',
+            background: 'linear-gradient(to right, var(--accent), #60a5fa)',
+            borderRadius: '99px',
+            animation: 'progressPulse 1.5s ease-in-out infinite',
+          }} />
+        </div>
+        <div style={{
+          width: '28px', height: '28px', borderRadius: '7px',
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 5l3 3-3 3M9 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
       </div>
 
-      {/* Terminal container */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0"
-        style={{ top: '36px' }}
-      />
-
-      {/* Connecting overlay */}
-      {isBusy && (
-        <div className="absolute inset-0 flex items-center justify-center" style={{ top: '36px', background: 'rgba(13,13,26,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
-            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Connecting to {session.host}…</span>
-          </div>
-        </div>
-      )}
-
-      {/* Error overlay */}
-      {isError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ top: '36px', background: 'rgba(13,13,26,0.85)' }}>
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(224,93,93,0.15)' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--error)' }}>
-              <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          </div>
-          <p className="text-sm" style={{ color: 'var(--error)' }}>Connection failed</p>
-          <p className="text-xs max-w-xs text-center" style={{ color: 'var(--text-muted)' }}>{session.errorMsg}</p>
-        </div>
-      )}
+      <button style={{
+        padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 500,
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        color: 'var(--text-secondary)', alignSelf: 'flex-start',
+        cursor: 'pointer',
+      }}>
+        Cancel
+      </button>
     </div>
+  )
+}
+
+function RightBtn({ children, title, active, onClick }: {
+  children: React.ReactNode; title: string; active?: boolean; onClick: () => void
+}) {
+  const [hovered, setHovered] = React.useState(false)
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: '30px', height: '30px', borderRadius: '7px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: hovered ? 'var(--bg-card)' : 'transparent',
+        color: active ? 'var(--accent)' : hovered ? 'var(--text-primary)' : 'var(--text-muted)',
+        transition: 'background .12s, color .12s',
+      }}
+    >
+      {children}
+    </button>
   )
 }

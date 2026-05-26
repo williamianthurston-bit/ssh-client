@@ -2,122 +2,161 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Custom Properties (Termius colour system) ─── */
+/* ── Color System ── */
 :root {
-  --bg-app: #1C1C2E;
-  --bg-sidebar: #13131F;
-  --bg-terminal: #0D0D1A;
-  --bg-modal: #1F1F33;
-  --accent: #6E3FC5;
-  --accent-hover: #8A5FD8;
-  --accent-light: rgba(110, 63, 197, 0.15);
-  --text-primary: #E4E6F0;
-  --text-muted: #8888AA;
-  --border: #2E2E48;
-  --tab-active: #6E3FC5;
-  --tab-inactive: #1A1A2C;
-  --success: #4CAF82;
-  --error: #E05D5D;
-  --warning: #F5A623;
+  --bg-app:        #0b0f1c;
+  --bg-sidebar:    #0d1120;
+  --bg-panel:      #111827;
+  --bg-card:       #141c2e;
+  --bg-input:      #141c2e;
+  --bg-hover:      #1a2540;
+  --bg-active:     rgba(59,130,246,0.12);
+  --bg-terminal:   #080c14;
+  --bg-modal:      #0f1625;
+
+  --accent:        #3b82f6;
+  --accent-hover:  #2563eb;
+  --accent-dim:    rgba(59,130,246,0.2);
+  --accent-green:  #22c55e;
+
+  --text-primary:  #e2e8f0;
+  --text-secondary:#8896b3;
+  --text-muted:    #4a5a78;
+  --text-link:     #60a5fa;
+
+  --border:        #1e2d45;
+  --border-light:  #151f35;
+
+  --tab-bar:       #0d1120;
+  --tab-active-bg: #141c2e;
+  --tab-indicator: #3b82f6;
+
+  --status-connected:    #22c55e;
+  --status-connecting:   #f97316;
+  --status-disconnected: #4a5a78;
+  --status-error:        #ef4444;
+
+  --success: #22c55e;
+  --warning: #f97316;
+  --error:   #ef4444;
+  --info:    #3b82f6;
+
+  --host-ubuntu:   #e95420;
+  --host-generic:  #1d3461;
+  --host-green:    #166534;
 }
 
-/* ─── Reset & Base ─── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+  height: 100%; width: 100%; overflow: hidden;
   background: var(--bg-app);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   user-select: none;
 }
 
-/* ─── Scrollbars ─── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(110, 63, 197, 0.4);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(110, 63, 197, 0.7);
-}
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3d60; }
 
-/* ─── Mac titlebar drag region ─── */
-.titlebar-drag {
-  -webkit-app-region: drag;
-}
-.titlebar-no-drag {
-  -webkit-app-region: no-drag;
-}
+/* ── Mac titlebar drag regions ── */
+.titlebar-drag    { -webkit-app-region: drag; }
+.titlebar-no-drag { -webkit-app-region: no-drag; }
 
-/* ─── xterm.js overrides ─── */
-.xterm {
-  padding: 12px 16px;
-  height: 100%;
-}
-.xterm-viewport {
-  background: transparent !important;
-  overflow-y: auto !important;
-}
-.xterm-screen {
-  background: transparent !important;
-}
+/* ── xterm.js ── */
+.xterm { height: 100%; }
+.xterm-viewport { background: transparent !important; }
+.xterm-screen   { background: transparent !important; }
 
-/* ─── Animations ─── */
+/* ── Inputs ── */
+input, textarea, select {
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-dim) !important;
+}
+input::placeholder { color: #2a3d60; }
+
+/* ── Animations ── */
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(0); opacity: 1; }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes progressPulse { 0%{width:20%} 60%{width:80%} 100%{width:65%} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-.animate-slide-in { animation: slideInRight 0.2s ease-out; }
-.animate-fade-in  { animation: fadeIn 0.15s ease-out; }
-.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.anim-modal    { animation: fadeInScale   .15s ease-out; }
+.anim-slide    { animation: slideInRight  .2s  ease-out; }
+.anim-fade     { animation: fadeIn        .15s ease-out; }
+.anim-spin     { animation: spin   0.7s   linear  infinite; }
+.anim-pulse    { animation: pulse  1.5s   ease-in-out infinite; }
+.anim-progress { animation: progressPulse 1.5s ease-in-out infinite; }
 
-/* ─── Focus rings ─── */
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(110, 63, 197, 0.25);
-}
-
-/* ─── Modal backdrop ─── */
+/* ── Modal backdrop ── */
 .modal-backdrop {
-  backdrop-filter: blur(8px);
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
 }
 
-/* ─── Connection status dots ─── */
-.status-connected {
-  background: var(--success);
-  box-shadow: 0 0 6px var(--success);
+/* ── Status dots ── */
+.dot-connected    { background: var(--status-connected); }
+.dot-connecting   { background: var(--status-connecting); }
+.dot-disconnected { background: var(--status-disconnected); }
+.dot-error        { background: var(--status-error); }
+
+/* ── Nav active ── */
+.nav-active {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
 }
-.status-connecting {
-  background: var(--warning);
+
+/* ── Host card selection ── */
+.host-card-selected {
+  border-color: var(--accent) !important;
+  background: rgba(59,130,246,0.08) !important;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15) !important;
 }
-.status-disconnected {
-  background: var(--text-muted);
+
+/* ── Command palette selection ── */
+.palette-item-active {
+  background: var(--bg-active);
+  border-left: 2px solid var(--accent);
 }
-.status-error {
-  background: var(--error);
+
+/* ── Terminal cursor blink (for static terminal displays) ── */
+.term-cursor {
+  display: inline-block; width: 8px; height: 14px;
+  background: var(--text-primary); margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
 }
+
+/* ── Tab active indicator ── */
+.tab-active-indicator {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--tab-indicator);
+}
+
+/* ── Button helpers ── */
+button { cursor: pointer; border: none; background: transparent; font-family: inherit; }

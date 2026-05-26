@@ -1,0 +1,79 @@
+name: Build Mac DMG
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:   # Allow manual trigger from GitHub UI
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package DMG (arm64 + x64)
+        run: |
+          npm run dist:mac:arm64
+          npm run dist:mac:x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List output
+        run: ls -la dist/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SSH-Client-Mac
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          retention-days: 30
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SSH Client ${{ github.ref_name }}
+          body: |
+            ## SSH Client ${{ github.ref_name }}
+
+            ### Download
+            - **Apple Silicon (M1/M2/M3):** `SSH-Client-*-arm64.dmg`
+            - **Intel Mac:** `SSH-Client-*-x64.dmg`
+
+            ### Install
+            1. Download the `.dmg` for your Mac type
+            2. Open the `.dmg` file
+            3. Drag **SSH Client** to your Applications folder
+            4. Right-click → Open (first launch only — app is unsigned)
+
+            ### Features
+            - 🖥️ SSH terminal with xterm.js (full colour, 10k scroll buffer)
+            - 📁 SFTP file browser (browse, download, upload)
+            - 🔑 SSH key management (password encrypted via OS keychain)
+            - 📂 Host groups with colour coding
+            - ⚡ Quick Connect (any server in seconds)
+            - 🎨 Termius-style dark theme
+          files: |
+            dist/*.dmg
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
