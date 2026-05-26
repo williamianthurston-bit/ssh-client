@@ -13,14 +13,15 @@ export const TERMINAL_THEMES: ThemeDef[] = [
     key: 'default',
     label: 'Termius Dark',
     theme: {
-      background: '#080c14', foreground: '#e2e8f0',
-      cursor: '#3b82f6', cursorAccent: '#080c14',
-      black: '#1e2d45', red: '#ef4444', green: '#22c55e', yellow: '#f97316',
-      blue: '#3b82f6', magenta: '#a78bfa', cyan: '#22d3ee', white: '#e2e8f0',
-      brightBlack: '#4a5a78', brightRed: '#f87171', brightGreen: '#4ade80',
-      brightYellow: '#fb923c', brightBlue: '#60a5fa', brightMagenta: '#c4b5fd',
-      brightCyan: '#67e8f9', brightWhite: '#f8fafc',
-      selectionBackground: 'rgba(59,130,246,0.25)',
+      /* Exact Termius dark theme — extracted from TermiusLocal bundle */
+      background: '#060A1D', foreground: '#F7F9FA',
+      cursor: '#2091F6', cursorAccent: '#060A1D',
+      black: '#0C1A38', red: '#F24E50', green: '#21B568', yellow: '#EFAF76',
+      blue: '#2091F6', magenta: '#AF5FFF', cyan: '#0D6D75', white: '#F7F9FA',
+      brightBlack: '#4D6EA9', brightRed: '#F25E61', brightGreen: '#00CC74',
+      brightYellow: '#F5D470', brightBlue: '#4797F8', brightMagenta: '#C07BFF',
+      brightCyan: '#7DAFDB', brightWhite: '#FFFFFF',
+      selectionBackground: 'rgba(32,145,246,0.25)',
     },
   },
   {

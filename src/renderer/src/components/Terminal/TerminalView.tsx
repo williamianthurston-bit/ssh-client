@@ -112,7 +112,7 @@ export default function TerminalView({ session }: Props): React.ReactElement {
   }, [session.theme])
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: 'var(--bg-terminal)' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: '#060A1D' }}>
       {/* xterm area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         <div ref={containerRef} style={{ flex: 1, position: 'relative' }} />
@@ -122,7 +122,7 @@ export default function TerminalView({ session }: Props): React.ReactElement {
           <div style={{
             position: 'absolute', inset: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(11,15,28,0.85)', backdropFilter: 'blur(4px)',
+            background: 'rgba(6,10,29,0.88)', backdropFilter: 'blur(6px)',
           }}>
             <ConnectingCard session={session} />
           </div>
@@ -146,7 +146,7 @@ export default function TerminalView({ session }: Props): React.ReactElement {
             </div>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '14px', fontWeight: 500, color: '#ef4444' }}>Connection failed</p>
-              <p style={{ fontSize: '12px', marginTop: '4px', color: 'var(--text-secondary)', maxWidth: '280px' }}>
+              <p style={{ fontSize: '12px', marginTop: '4px', color: '#8D91A5', maxWidth: '280px' }}>
                 {session.errorMsg}
               </p>
             </div>
@@ -162,8 +162,8 @@ export default function TerminalView({ session }: Props): React.ReactElement {
       {/* Right icon bar */}
       <div style={{
         width: '44px', flexShrink: 0,
-        background: 'var(--bg-sidebar)',
-        borderLeft: '1px solid var(--border-light)',
+        background: '#0C1A38',
+        borderLeft: '1px solid #0F2040',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', padding: '10px 0', gap: '6px',
       }}>
@@ -209,8 +209,8 @@ export default function TerminalView({ session }: Props): React.ReactElement {
 function ConnectingCard({ session }: { session: Session }) {
   return (
     <div style={{
-      background: 'var(--bg-panel)',
-      border: '1px solid var(--border)',
+      background: '#141729',
+      border: '1px solid #1A2F54',
       borderRadius: '12px',
       padding: '20px 24px',
       display: 'flex', flexDirection: 'column', gap: '14px',
@@ -220,7 +220,7 @@ function ConnectingCard({ session }: { session: Session }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '38px', height: '38px', borderRadius: '9px',
-            background: '#e95420',
+            background: 'linear-gradient(135deg, #2091F6, #21B568)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -231,18 +231,18 @@ function ConnectingCard({ session }: { session: Session }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#F7F9FA' }}>
               {session.label}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: '"JetBrains Mono", monospace' }}>
+            <div style={{ fontSize: '12px', color: '#5A5E73', fontFamily: 'ui-monospace, "JetBrains Mono", monospace' }}>
               SSH {session.host}:22
             </div>
           </div>
         </div>
         <button style={{
           padding: '6px 12px', borderRadius: '7px', fontSize: '12px', fontWeight: 500,
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          color: 'var(--text-secondary)',
+          background: '#1A2F54', border: '1px solid #264E72',
+          color: '#8D91A5',
         }}>
           Show logs
         </button>
@@ -252,25 +252,25 @@ function ConnectingCard({ session }: { session: Session }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{
           width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-          border: '2.5px solid var(--border)', borderTopColor: 'var(--accent)',
+          border: '2.5px solid #1A2F54', borderTopColor: '#2091F6',
           animation: 'spin 0.7s linear infinite',
         }} />
         <div style={{
           flex: 1, height: '3px',
-          background: 'var(--border)', borderRadius: '99px', overflow: 'hidden',
+          background: '#1A2F54', borderRadius: '99px', overflow: 'hidden',
         }}>
           <div style={{
             height: '100%', width: '65%',
-            background: 'linear-gradient(to right, var(--accent), #60a5fa)',
+            background: 'linear-gradient(to right, #2091F6, #21B568)',
             borderRadius: '99px',
             animation: 'progressPulse 1.5s ease-in-out infinite',
           }} />
         </div>
         <div style={{
           width: '28px', height: '28px', borderRadius: '7px',
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          background: '#1A2F54', border: '1px solid #264E72',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0,
+          color: '#8D91A5', cursor: 'pointer', flexShrink: 0,
         }}>
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
             <path d="M3 5l3 3-3 3M9 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -280,8 +280,8 @@ function ConnectingCard({ session }: { session: Session }) {
 
       <button style={{
         padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 500,
-        background: 'var(--bg-card)', border: '1px solid var(--border)',
-        color: 'var(--text-secondary)', alignSelf: 'flex-start',
+        background: '#1A2F54', border: '1px solid #264E72',
+        color: '#8D91A5', alignSelf: 'flex-start',
         cursor: 'pointer',
       }}>
         Cancel
@@ -303,8 +303,8 @@ function RightBtn({ children, title, active, onClick }: {
       style={{
         width: '30px', height: '30px', borderRadius: '7px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: hovered ? 'var(--bg-card)' : 'transparent',
-        color: active ? 'var(--accent)' : hovered ? 'var(--text-primary)' : 'var(--text-muted)',
+        background: hovered ? 'rgba(32,145,246,0.08)' : 'transparent',
+        color: active ? '#2091F6' : hovered ? '#F7F9FA' : '#4D6EA9',
         transition: 'background .12s, color .12s',
       }}
     >

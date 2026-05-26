@@ -32,38 +32,53 @@ export default function HostItem({ host, indent }: Props): React.ReactElement {
     setMenu(null)
   }
 
-  const statusClass = session?.status === 'connected'    ? 'dot-connected'
-                    : session?.status === 'connecting'   ? 'dot-connecting'
-                    : session?.status === 'error'        ? 'dot-error'
-                    : 'dot-disconnected'
+  const dotColor =
+    session?.status === 'connected'  ? '#21B568' :
+    session?.status === 'connecting' ? '#EFAF76' :
+    session?.status === 'error'      ? '#F24E50' : '#4D6EA9'
 
   return (
     <>
       <div
-        className={`titlebar-no-drag flex items-center gap-2.5 py-1.5 cursor-pointer group/item transition-colors ${isActive ? 'sidebar-item-active' : ''}`}
-        style={{ paddingLeft: `${12 + indent * 16}px`, paddingRight: '12px' }}
+        className="titlebar-no-drag flex items-center gap-2.5 py-1.5 cursor-pointer group/item"
+        style={{
+          paddingLeft: `${12 + indent * 16}px`,
+          paddingRight: '10px',
+          background: isActive ? 'rgba(32,145,246,0.1)' : 'transparent',
+          borderLeft: isActive ? '2px solid #2091F6' : '2px solid transparent',
+        }}
         onClick={connect}
         onContextMenu={e => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY }) }}
-        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)' }}
-        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+        onMouseEnter={e => {
+          if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+        }}
+        onMouseLeave={e => {
+          if (!isActive) e.currentTarget.style.background = 'transparent'
+        }}
       >
         {/* Status dot */}
-        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusClass}`} />
+        <div style={{
+          width: '6px', height: '6px', borderRadius: '50%',
+          background: dotColor, flexShrink: 0,
+          boxShadow: session?.status === 'connected' ? `0 0 4px ${dotColor}88` : 'none',
+        }} />
 
-        {/* Info */}
+        {/* Host info */}
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium truncate" style={{ color: isActive ? 'var(--accent)' : 'var(--text-primary)' }}>
+          <div className="text-xs font-medium truncate"
+               style={{ color: isActive ? '#2091F6' : '#F7F9FA' }}>
             {host.label}
           </div>
-          <div className="text-xs truncate" style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+          <div className="truncate" style={{ color: '#5A5E73', fontSize: '11px' }}>
             {host.username}@{host.host}
           </div>
         </div>
 
-        {/* Auth badge */}
+        {/* Key badge — shown on hover */}
         {host.authType === 'key' && (
-          <svg className="opacity-0 group-hover/item:opacity-40 shrink-0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
-            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+          <svg className="opacity-0 group-hover/item:opacity-100 shrink-0 transition-opacity"
+               width="10" height="10" viewBox="0 0 10 10" fill="#4D6EA9">
+            <path d="M8.455 0.955L7.012 2.399L6.645 2.033C6.173 1.561 5.35 1.56 4.878 2.033L4.375 2.536L4.045 2.205L3.455 2.795L7.205 6.545L7.795 5.955L7.464 5.625L7.967 5.122C8.455 4.635 8.455 3.842 7.967 3.354L7.601 2.988L9.045 1.545L8.455 0.955ZM2.795 3.455L2.205 4.045L2.536 4.375L2.033 4.878C1.545 5.365 1.545 6.158 2.033 6.645L2.399 7.012L0.955 8.455L1.545 9.045L2.988 7.601L3.354 7.967C3.59 8.203 3.904 8.333 4.238 8.333C4.572 8.333 4.886 8.203 5.122 7.967L5.625 7.464L5.955 7.795L6.545 7.205L2.795 3.455Z"/>
           </svg>
         )}
       </div>
@@ -73,10 +88,16 @@ export default function HostItem({ host, indent }: Props): React.ReactElement {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenu(null)} />
           <div className="fixed z-50 py-1 rounded-xl anim-fade"
-               style={{ left: menu.x, top: menu.y, background: 'var(--bg-modal)', border: '1px solid var(--border-light)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', minWidth: '164px' }}>
+               style={{
+                 left: menu.x, top: menu.y,
+                 background: '#1A2F54',
+                 border: '1px solid #264E72',
+                 boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+                 minWidth: '164px',
+               }}>
             <Ctx onClick={connect}>Connect</Ctx>
             <Ctx onClick={() => { openEditHost(host.id); setMenu(null) }}>Edit Host</Ctx>
-            <div className="my-1 mx-2" style={{ borderTop: '1px solid var(--border)' }} />
+            <div className="my-1 mx-2" style={{ borderTop: '1px solid #264E72' }} />
             <Ctx onClick={doDelete} danger>Delete</Ctx>
           </div>
         </>
@@ -87,10 +108,10 @@ export default function HostItem({ host, indent }: Props): React.ReactElement {
 
 function Ctx({ children, onClick, danger }: { children: React.ReactNode, onClick: () => void, danger?: boolean }) {
   return (
-    <button className="w-full flex items-center px-3 py-1.5 text-xs transition-colors"
-            style={{ color: danger ? 'var(--error)' : 'var(--text-primary)' }}
+    <button className="w-full flex items-center px-3 py-1.5 text-xs"
+            style={{ color: danger ? '#F24E50' : '#F7F9FA' }}
             onClick={onClick}
-            onMouseEnter={e => (e.currentTarget.style.background = danger ? 'rgba(224,93,93,0.1)' : 'var(--bg-hover)')}
+            onMouseEnter={e => (e.currentTarget.style.background = danger ? 'rgba(242,78,80,0.1)' : 'rgba(32,145,246,0.08)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
       {children}
     </button>
