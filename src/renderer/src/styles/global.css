@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Custom Properties (Termius colour system) ─── */
+:root {
+  --bg-app: #1C1C2E;
+  --bg-sidebar: #13131F;
+  --bg-terminal: #0D0D1A;
+  --bg-modal: #1F1F33;
+  --accent: #6E3FC5;
+  --accent-hover: #8A5FD8;
+  --accent-light: rgba(110, 63, 197, 0.15);
+  --text-primary: #E4E6F0;
+  --text-muted: #8888AA;
+  --border: #2E2E48;
+  --tab-active: #6E3FC5;
+  --tab-inactive: #1A1A2C;
+  --success: #4CAF82;
+  --error: #E05D5D;
+  --warning: #F5A623;
+}
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ─── Scrollbars ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(110, 63, 197, 0.4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 63, 197, 0.7);
+}
+
+/* ─── Mac titlebar drag region ─── */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ─── xterm.js overrides ─── */
+.xterm {
+  padding: 12px 16px;
+  height: 100%;
+}
+.xterm-viewport {
+  background: transparent !important;
+  overflow-y: auto !important;
+}
+.xterm-screen {
+  background: transparent !important;
+}
+
+/* ─── Animations ─── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.animate-slide-in { animation: slideInRight 0.2s ease-out; }
+.animate-fade-in  { animation: fadeIn 0.15s ease-out; }
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* ─── Focus rings ─── */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(110, 63, 197, 0.25);
+}
+
+/* ─── Modal backdrop ─── */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ─── Connection status dots ─── */
+.status-connected {
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+.status-connecting {
+  background: var(--warning);
+}
+.status-disconnected {
+  background: var(--text-muted);
+}
+.status-error {
+  background: var(--error);
+}
